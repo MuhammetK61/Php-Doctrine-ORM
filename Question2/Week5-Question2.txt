@@ -1,0 +1,150 @@
+﻿5.HAFTA ARAŞTIRMA ÖDEVİ CEVAPLARI
+
+
+A-) Repository Design Pattern, veritabanı sorumluluğunu üstlenen sınıfı tasarlarken bir standart üzerine 
+oturtmayı hedefleyen ve Entity Framework gibi ORM (Object Relational Mapping) araçlarıyla kombine edilerek
+sorgusal anlamda az sayıda operatif metotla yüksek seviyede veri erişim imkânı sağlayan bir strateji üzerine 
+kurulu tasarım desenidir.Veritabanı işlemlerinden insert, update ve delete gibi işlemler yaparken her tablo 
+için ayrı ayrı metot ve kod yazmamız gerekebilir. Örnek olarak 25-30 tablo sayısından oluşan bir veritabanımız olsun,
+biz bu tabloların her biri için insert, update ve delete kodlarını yazmamız gerekiyor. Bu da bizim için kod 
+karmaşıklığı ve fazla iş yükü demektir. Bu karmaşıklığı ortadan kaldırmak için Repository Pattern kullanmaktayız. 
+Repository Pattern sayesinde kod karmaşıklığını ortadan kaldırırız, iş yükünü azaltırız ve hata payını en aza 
+indirerek daha temiz kod yazabiliriz. Bir örnekle açıklamak gerekirse; Eklediğimiz classın kod yapısı Northwind 
+veritabanı örneği aşağıdaki gibidir.
+
+
+
+
+
+
+
+
+
+
+
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Data.Objects;
+using System.Linq.Expressions;
+using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
+using System.Data;
+using RepositoryPattern.DataLayer;
+ 
+public class Repository<T> where T : class
+{
+ IObjectContextAdapter _context;
+ IObjectSet<T> _objectSet;
+ 
+ public Repository()
+ {
+ 
+_context = new NorthwindEntities();
+ _objectSet = _context.ObjectContext.CreateObjectSet<T>();
+ }
+ 
+public IQueryable<T> AsQueryable()
+ {
+ return _objectSet;
+ }
+ 
+public T First(Expression<Func<T, bool>> where)
+ {
+ 
+return _objectSet.First(where);
+ }
+ 
+public IEnumerable<T> Find(Expression<Func<T, bool>> where)
+ {
+ return _objectSet.Where(where);
+ }
+ 
+public void Delete(T entity)
+ {
+ _objectSet.DeleteObject(entity);
+ _context.ObjectContext.SaveChanges();
+ }
+ 
+public bool Add(T entity)
+ {
+ _objectSet.AddObject(entity);
+ _context.ObjectContext.SaveChanges();
+ return true;
+ }
+ 
+public void Attach(T entity)
+ {
+ _objectSet.Attach(entity);
+ _context.ObjectContext.SaveChanges();
+ }
+ 
+public List<T> Listele()
+ {
+ List<T> liste = _objectSet.ToList();
+ return liste;
+ }
+ 
+public bool UpdateSaveChanges()
+ {
+ _context.ObjectContext.SaveChanges();
+ return true;
+ }
+ // İçerisine aldığı order by sorgusuna göre sıralama yapar
+ public List<T> Listele2<F>(Expression<Func<T, F>> where)
+ {
+ return _objectSet.OrderBy(where).ToList();
+ }
+ //Aldığı sorguya göre listeleme yapar
+ public List<T> SorguyaGoreListele(Expression<Func<T, bool>> where)
+ {
+ return _objectSet.Where(where).ToList();
+ }
+ 
+}
+
+
+
+
+Görüldüğü gibi Repository isimli classımızda instance aldıktan sonra içine categories nesnesini verdik ve direk 
+sınıfımız o nesneye yönelik bir insert işlemi gerçekleştirdi. Classımızın içine verdiğimiz entitiy e göre içerisinde 
+bulunan tüm işlemleri gerçekleştirecek ve böylelikle bizi çok büyük bir kod yükünden kurtaracaktır. Örneğin burada 
+KategoriEkle isimli bir metot yazmamıza ve bağlantı açmamıza gerek kalmamıştır.
+
+
+
+
+protected void Button1_Click(object sender, EventArgs e)
+ {
+ Repository<Categories> rptcat = new Repository<Categories>();
+ Categories cat = new Categories();
+ cat.CategoryName = TxtAd.Text;
+ cat.Description = TxtAciklama.Text;
+ rptcat.Add(cat);
+ }
+
+
+
+
+
+
+---------------------------------------------------------------------------
+Sql İnjection: SQL Injection, veri tabanına dayalı uygulamalara saldırmak için kullanılan bir atak tekniğidir.
+
+
+Man in the Middle: Man in the middle saldırganın birbiri ile doğrudan iletişim kuran iki taraf arasındaki iletişimi 
+gizlice ilettiği veya değiştirdiği saldırı türüdür.
+
+
+Cross-Site Scripting(XSS): Cross-site scripting script kodları üzerinden(genelde javascript) bir web sitesine 
+yapılan saldırıdır.
+
+
+Session Hijacking: Bilgisayar biliminde, bazen çerez kaçırma olarak da bilinen session hijacking, bir bilgisayar 
+sistemindeki bilgilere bazen veya hizmetlere yetkisiz erişim elde etmek için geçerli bilgisayar oturumunun 
+kullanılmasıdır.
+
+
+Cross-Site Request Forgery: Web uygulamasını kullanmakta olan kullanıcıların istekleri dışında işlemler yürütülmesidir.
